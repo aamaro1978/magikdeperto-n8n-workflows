@@ -1,1 +1,23 @@
 
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <title>Magician Funnel</title>
+      <style>
+          body { font-family: Arial; max-width: 500px; margin: 50px auto; }
+          input, button { width: 100%; padding: 10px; margin: 10px 0; }
+          button { background: #FF6B6B; color: white; border: none; cursor: pointer; }
+      </style>
+  </head>
+  <body>
+      <h2>🎭 Solicite seu Show de Mágica</h2>
+      <form action="https://magikdeperto.app.n8n.cloud/webhook/webhook/magician" method="POST">
+          <input type="hidden" name="type" value="baile_debutante">
+          <input type="text" name="phone" placeholder="Seu WhatsApp" required>
+          <input type="text" name="nome_debutante" placeholder="Nome da debutante">
+          <input type="text" name="data_baile" placeholder="Data do baile (DD-MM-YYYY)">
+          <button type="submit">Enviar 🚀</button>
+      </form>
+  </body>
+  </html>
+
