@@ -1,0 +1,328 @@
+{
+  "name": "Magician Funnel - WhatsApp Automático",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "webhook/magician",
+        "authMethod": "none"
+      },
+      "id": "webhook_entrada",
+      "name": "Webhook - Entrada WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "corporativo",
+              "operation": "equals"
+            },
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "casamento",
+              "operation": "equals"
+            },
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "infantil",
+              "operation": "equals"
+            },
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "escolar",
+              "operation": "equals"
+            },
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "privado",
+              "operation": "equals"
+            },
+            {
+              "value1": "={{ $json.type }}",
+              "value2": "baile_debutante",
+              "operation": "equals"
+            }
+          ]
+        }
+      },
+      "id": "validacao_tipo",
+      "name": "Validar Tipo de Evento",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "={{ $env.CLAUDE_API_KEY }}",
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "claude-opus-4-6",
+          "max_tokens": 2000,
+          "system": "Você é o agente magician-show-sales-funnel especialista em vendas de shows de mágica. Tipos de eventos suportados: corporativo, casamento, infantil, escolar, privado, baile_debutante. Execute os comandos do usuário com precisão.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "*aquecar {{ $json.type }}"
+            }
+          ]
+        }
+      },
+      "id": "claude_api_aquecimento",
+      "name": "Claude API - Gerar Aquecimento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "={{ $env.CLAUDE_API_KEY }}",
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "claude-opus-4-6",
+          "max_tokens": 2000,
+          "system": "Você é o agente magician-show-sales-funnel. Execute comandos *qualificar com precisão.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "*qualificar {{ $json.qualificacao }}"
+            }
+          ]
+        }
+      },
+      "id": "claude_api_qualificacao",
+      "name": "Claude API - Qualificar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "={{ $env.CLAUDE_API_KEY }}",
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "claude-opus-4-6",
+          "max_tokens": 2000,
+          "system": "Você é o agente magician-show-sales-funnel. Gere propostas customizadas por tipo de evento.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "*proposta {{ $json.type }}"
+            }
+          ]
+        }
+      },
+      "id": "claude_api_proposta",
+      "name": "Claude API - Gerar Proposta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/v18.0/{{ $env.WHATSAPP_PHONE_ID }}/messages",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{ $env.WHATSAPP_TOKEN }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "messaging_product": "whatsapp",
+          "recipient_type": "individual",
+          "to": "{{ $json.phone }}",
+          "type": "text",
+          "text": {
+            "body": "{{ $node.claude_api_aquecimento.json.content[0].text }}"
+          }
+        }
+      },
+      "id": "whatsapp_send_aquecimento",
+      "name": "WhatsApp - Enviar Aquecimento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/v18.0/{{ $env.WHATSAPP_PHONE_ID }}/messages",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{ $env.WHATSAPP_TOKEN }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "messaging_product": "whatsapp",
+          "recipient_type": "individual",
+          "to": "{{ $json.phone }}",
+          "type": "text",
+          "text": {
+            "body": "{{ $node.claude_api_qualificacao.json.content[0].text }}"
+          }
+        }
+      },
+      "id": "whatsapp_send_qualificacao",
+      "name": "WhatsApp - Enviar Qualificação",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/v18.0/{{ $env.WHATSAPP_PHONE_ID }}/messages",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{ $env.WHATSAPP_TOKEN }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "messaging_product": "whatsapp",
+          "recipient_type": "individual",
+          "to": "{{ $json.phone }}",
+          "type": "text",
+          "text": {
+            "body": "{{ $node.claude_api_proposta.json.content[0].text }}"
+          }
+        }
+      },
+      "id": "whatsapp_send_proposta",
+      "name": "WhatsApp - Enviar Proposta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 600]
+    },
+    {
+      "parameters": {
+        "key": "lead_{{ $json.phone }}_{{ Date.now() }}",
+        "value": "={{ $json }}",
+        "ttl": 2592000
+      },
+      "id": "firebase_save_lead",
+      "name": "Firebase - Salvar Lead",
+      "type": "n8n-nodes-base.firebaseRealtimeDatabase",
+      "typeVersion": 2,
+      "position": [1050, 400]
+    }
+  ],
+  "connections": {
+    "webhook_entrada": {
+      "main": [
+        [
+          {
+            "node": "validacao_tipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validacao_tipo": {
+      "main": [
+        [
+          {
+            "node": "claude_api_aquecimento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "claude_api_qualificacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "claude_api_proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claude_api_aquecimento": {
+      "main": [
+        [
+          {
+            "node": "whatsapp_send_aquecimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claude_api_qualificacao": {
+      "main": [
+        [
+          {
+            "node": "whatsapp_send_qualificacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claude_api_proposta": {
+      "main": [
+        [
+          {
+            "node": "whatsapp_send_proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "whatsapp_send_aquecimento": {
+      "main": [
+        [
+          {
+            "node": "firebase_save_lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "whatsapp_send_qualificacao": {
+      "main": [
+        [
+          {
+            "node": "firebase_save_lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "whatsapp_send_proposta": {
+      "main": [
+        [
+          {
+            "node": "firebase_save_lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
